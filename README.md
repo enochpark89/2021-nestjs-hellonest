@@ -278,3 +278,190 @@ import { CreateMovieDto } from './create-movie.dto';
 
 export class UpdateMovieDto extends PartialType(CreateMovieDto) {}
 ```
+
+# 6.0 Modules and Dependency Injection
+
+- Need to organize the app by modules. 
+
+*How do you generate a module?*
+
+```ts
+nest g mo
+// generate module
+```
+
+- After you have created a module, app.module.ts will import [MoviesModule] as below
+
+```ts
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { MoviesController } from './movies/movies.controller';
+import { MoviesService } from './movies/movies.service';
+import { MoviesModule } from './movies/movies.module';
+
+@Module({
+  imports: [MoviesModule],
+  controllers: [MoviesController],
+  providers: [MoviesService],
+})
+export class AppModule {}
+```
+- Delete [MoviesController] and [MoviesService] and add them to movies.controller.ts
+
+
+- Generate a new controller.
+
+```
+nest g co
+```
+
+After, the app Module will have below:
+```ts
+@Module({
+  imports: [MoviesModule],
+  controllers: [AppController],
+  providers: [],
+})
+```
+
+*What would new app controller do?*
+- This might get the home() page only.
+
+app.controller.ts:
+```ts
+import { Controller, Get } from '@nestjs/common';
+
+@Controller('')
+export class AppController {
+  @Get()
+  home() {
+    return 'Welcome to my Movie API';
+  }
+}
+```
+
+output: In the home page, it will display "Welcome to my Movie API";
+
+- As a result, when NestJS starts, it will start one module that contrains everything that we need. 
+- **Dependency injection** means that NestJS is doing everything for you.
+
+# 7.0 Express on NestJS
+
+- Though there is a way to access Express on NestJS, it is not recommended because NestJS works also with Fastify as well as Express. Therefore, if you change something on the ExpressJS it might not work together with Fastify.
+
+# Unit Testing
+
+# 1.0 Test in Nest
+
+- Jest is there to help us test in NestJS.
+- If you want to test a file called movie.controller.ts, you need to have movie.controller.spec. 
+
+Example:
+
+```ts
+npm run test:cov
+// npm run test coverage.
+```
+- from all the .spec, it will do the testings. 
+
+```shell
+npm run test:watch
+```
+
+- Look at all the test files and going to be looking at them and see what happens. 
+
+- There are two test
+
+1. Unit test: test on isolated unit
+2. E2E (End to End test): you want to test the whole system.  
+
+# 2.0 Your First Unit test
+
+- Use Jest to perform your first test.
+- describe() - describe test
+- beforeEach(): execute something before the test. 
+- it(, ()) => expected
+
+ex:
+```ts
+// should be > function that you want to perform
+it("should be 4", () => {
+    expect(2+2).toEqual(4)
+})
+// If the function is ran, it is successful.
+```
+
+# 3.0 Testing getAll and getOne
+
+# 4.0 Testing delete and create
+
+- Test delete
+movies.service.spec.ts
+```ts
+  describe('deleteOne', () => {
+    it('deletes a movie', () => {
+      service.create({
+        title: 'Test Movie',
+        genres: ['test'],
+        year: 2000,
+      });
+      // After the deletion, it should have the length -1.
+      const beforeDelete = service.getAll().length;
+      service.deleteOne(1);
+      const afterDelete = service.getAll().length;
+      expect(afterDelete).toBeLessThan(beforeDelete);
+    });
+    it('should return a 404', () => {
+      try {
+        service.deleteOne(999);
+      } catch (e) {
+        expect(e).toBeInstanceOf(NotFoundException);
+      }
+    });
+  });
+```
+
+- Test create
+```ts
+  describe('create', () => {
+    it('should create a movie', () => {
+      const beforeCreate = service.getAll().length;
+      service.create({
+        title: 'Test Movie',
+        genres: ['test'],
+        year: 2000,
+      });
+      const afterCreate = service.getAll().length;
+      expect(afterCreate).toBeGreaterThan(beforeCreate);
+    });
+  });
+```
+
+# 5.0 Testing update
+
+- Test Update
+
+```ts
+ describe('update', () => {
+    it('should update a movie', () => {
+      service.create({
+        title: 'Test Movie',
+        genres: ['test'],
+        year: 2000,
+      });
+      // After updating the title, the title is going to be changed.
+      service.update(1, { title: 'Updated Test' });
+      const movie = service.getOne(1);
+      expect(movie.title).toEqual('Updated Test');
+    });
+
+    it('should throw a NotFoundException', () => {
+      try {
+        service.update(999, {});
+      } catch (e) {
+        expect(e).toBeInstanceOf(NotFoundException);
+      }
+    });
+  });
+```
